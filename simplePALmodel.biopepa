@@ -1,0 +1,82 @@
+Threshold = 10 ;
+
+AtoB_A1 = H( X_A1 - Threshold );
+AtoB_A2 = H( X_A2 - Threshold );
+
+addrate_B1 = 0.5 + ( Y_B1 * 0 );
+addrate_B2 = 0.5 + ( Y_B2 * 0 );
+
+
+InTracker_off_A1 =  H( 1 - Tracker_off_A1 );
+InTracker_off_A2 =  H( 1 - Tracker_off_A2 );
+InTracker_on_A1 =  H(( Tracker_on_A1 + 1 ) - 1 );
+InTracker_on_A2 =  H(( Tracker_on_A2 + 1 ) - 1 );
+InX_A1 =  H(( X_A1 + 1 ) - 1 );
+InX_A2 =  H(( X_A2 + 1 ) - 1 );
+InY_B1 =  H(( Y_B1 + 1 ) - 1 );
+InY_B2 =  H(( Y_B2 + 1 ) - 1 );
+InZ_B1 =  H(( Z_B1 + 1 ) - 1 );
+InZ_B2 =  H(( Z_B2 + 1 ) - 1 );
+
+kineticLawOf InitialTracker_off_A1 : ( fMA(10 * InTracker_off_A1)) * Off_A1;
+kineticLawOf InitialTracker_off_A2 : ( fMA(10 * InTracker_off_A2)) * Off_A2;
+kineticLawOf InitialTracker_on_A1 : ( fMA(10 * InTracker_on_A1)) * Off_A1;
+kineticLawOf InitialTracker_on_A2 : ( fMA(10 * InTracker_on_A2)) * Off_A2;
+kineticLawOf InitialX_A1 : ( fMA(10 * InX_A1)) * Off_A1;
+kineticLawOf InitialX_A2 : ( fMA(10 * InX_A2)) * Off_A2;
+kineticLawOf InitialY_B1 : ( fMA(10 * InY_B1)) * Off_B1;
+kineticLawOf InitialY_B2 : ( fMA(10 * InY_B2)) * Off_B2;
+kineticLawOf InitialZ_B1 : ( fMA(10 * InZ_B1)) * Off_B1;
+kineticLawOf InitialZ_B2 : ( fMA(10 * InZ_B2)) * Off_B2;
+
+
+kineticLawOf addX_A1 :( 1 ) * On_A1;
+kineticLawOf addX_A2 :( 1 ) * On_A2;
+
+kineticLawOf switch_A1_B1 : ( fMA( 100 * AtoB_A1 ) ) * On_A1;
+kineticLawOf switch_A1_B2 : ( fMA( 100 * AtoB_A1 ) ) * On_A1;
+kineticLawOf switch_A2_B1 : ( fMA( 100 * AtoB_A2 ) ) * On_A2;
+kineticLawOf switch_A2_B2 : ( fMA( 100 * AtoB_A2 ) ) * On_A2;
+
+kineticLawOf addY_B1 :( addrate_B1 ) * On_B1;
+kineticLawOf addY_B2 :( addrate_B2 ) * On_B2;
+
+kineticLawOf removeY_B1 :( 0.2 ) * On_B1;
+kineticLawOf removeY_B2 :( 0.2 ) * On_B2;
+
+kineticLawOf remove_B1 :( fMA( 0.1 ) ) * On_B1;
+kineticLawOf remove_B2 :( fMA( 0.1 ) ) * On_B2;
+
+
+X_A1 =  ( addX_A1 , 1) >> + InitialX_A1 <<;
+X_A2 =  ( addX_A2 , 1) >> + InitialX_A2 <<;
+
+
+Tracker_off_A1 =  switch_A1_B1 << + switch_A1_B2 << + InitialTracker_off_A1 >>;
+Tracker_off_A2 =  switch_A2_B1 << + switch_A2_B2 << + InitialTracker_off_A2 >>;
+
+
+Tracker_on_A1 =  switch_A1_B1 >> + switch_A1_B2 >> + InitialTracker_on_A1 <<;
+Tracker_on_A2 =  switch_A2_B1 >> + switch_A2_B2 >> + InitialTracker_on_A2 <<;
+
+
+
+Y_B1 =  ( addY_B1 , 1) >> +  ( removeY_B1 , 1) << + InitialY_B1 <<;
+Y_B2 =  ( addY_B2 , 1) >> +  ( removeY_B2 , 1) << + InitialY_B2 <<;
+
+
+Z_B1 =  ( removeY_B1 , 1) >> + InitialZ_B1 <<;
+Z_B2 =  ( removeY_B2 , 1) >> + InitialZ_B2 <<;
+
+
+On_A1 = switch_A1_B1 << + switch_A1_B2 <<;
+Off_A1 = switch_A1_B1 >> + switch_A1_B2 >>;
+On_A2 = switch_A2_B1 << + switch_A2_B2 <<;
+Off_A2 = switch_A2_B1 >> + switch_A2_B2 >>;
+On_B1 = remove_B1 << + switch_A1_B1 >> + switch_A2_B1 >>;
+Off_B1 = remove_B1 >> + switch_A1_B1 << + switch_A2_B1 <<;
+On_B2 = remove_B2 << + switch_A1_B2 >> + switch_A2_B2 >>;
+Off_B2 = remove_B2 >> + switch_A1_B2 << + switch_A2_B2 <<;
+
+
+X_A1 [0] <*> Tracker_off_A1 [1] <*> Tracker_on_A1 [0] <*> On_A1 [1] <*> Off_A1 [0] <*> X_A2 [0] <*> Tracker_off_A2 [1] <*> Tracker_on_A2 [0] <*> On_A2 [1] <*> Off_A2 [0] <*> Y_B1 [0] <*> Z_B1 [0] <*> On_B1 [0] <*> Off_B1 [1] <*> Y_B2 [0] <*> Z_B2 [0] <*> On_B2 [0] <*> Off_B2 [1] 

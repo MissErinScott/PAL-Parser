@@ -1,0 +1,39 @@
+InitialReset X = H((X+1) - 1);
+InitialReset Tracker_off = H(1 - Tracker_off );
+InitialReset Tracker_on = H((Tracker_on + 1) - 1 );
+
+InitialReset Y = H((Y+1) - 1);
+InitialReset Z = H((Z+1) - 1);
+
+Threshold = 10; 
+AtoB= H(X - Threshold);
+
+addrate = 0.5 + (Y*0);
+
+addX : 1;
+switch : fMA(100 * AtoB);
+
+addY : addrate;
+removeY : 0.2;
+
+remove: fMA(0.1);
+
+
+X = (addX,1) >>;
+Tracker_off = (switch, 1) <<;
+Tracker_on = (switch, 1) >>;
+
+Y = (addY,1) >> + (removeY,1) <<;
+Z = (removeY,1) >>;
+
+HiddenActions A : {addX,addY,removeY};
+
+A = X[0]<*> Tracker_off[1] <*> Tracker_on[0] 
+B = Y[0]<*>Z[0]
+
+One{{A}} = switch <<<;
+Two{{B}} = switch >>> + remove <<<;
+
+One{{A}}[[2]]{switch}Two{{B}}[[0]]
+
+Max: One{{A}} 2, Two{{B}} 2;
